@@ -45,3 +45,15 @@ client.on('messageCreate', async message => {
 });
 
 client.login(process.env.TOKEN);
+
+// --- Fake Express server to keep Render service alive ---
+const express = require('express');
+const app = express();
+
+app.get('/', (req, res) => {
+  res.send('EEe MOD is running!');
+});
+
+app.listen(3000, () => {
+  console.log('Fake web server running on port 3000');
+});
