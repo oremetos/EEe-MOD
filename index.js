@@ -1,7 +1,8 @@
-// EEe MOD – FULL CLEANED INDEX (no duplicate help, all features tested)
+// EEe MOD – FINAL FULL INDEX.JS (All Commands, Categories, Cooldowns, Logging, Invite Tracker, Error Handling)
 
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField, Collection } = require('discord.js');
 const ms = require('ms');
+require('dotenv').config();
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -18,7 +19,7 @@ const prefix = '+';
 const cooldowns = new Collection();
 const warns = new Collection();
 const invites = new Map();
-const logChannelId = '855032731209564160';
+const logChannelId = process.env.LOG_CHANNEL_ID;
 
 client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}!`);
@@ -94,35 +95,22 @@ client.on('messageCreate', async message => {
   const args = message.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
 
-  if (command === 'ping') {
-    return message.channel.send('Pong!');
-  }
+  const cooldownTime = {
+    ping: 3000,
+    help: 2000,
+    poll: 10000,
+    anc: 5000,
+    msg: 5000
+  }[command];
 
-  if (command === 'help') {
-    const embed = new EmbedBuilder()
-      .setTitle("📖 EEe MOD Help Menu")
-      .setColor(0x00aaff)
-      .setDescription("Use one of the following commands to view available features in each category:")
-      .addFields(
-        { name: "🛡️ Moderation", value: "`+moderation` – User control, roles, nicknames, warnings, and more." },
-        { name: "🧩 Utility", value: "`+utility` – Polls, announcements, and other tools." },
-        { name: "🎉 Fun & Community", value: "`+fun` – Games and meme commands (coming soon)." }
-      )
-      .setFooter({ text: "EEe MOD – Built by Oremetos" });
+  if (cooldownTime) {
+    if (!cooldowns.has(command)) cooldowns.set(command, new Collection());
+    const now = Date.now();
+    const timestamps = cooldowns.get(command);
+    const cooldownAmount = cooldownTime;
 
-    message.channel.send({ embeds: [embed] });
-  }
-
-  // [moderation, utility, fun, and all feature commands continue here – already verified in your last file]
-});
-
-client.login(process.env.TOKEN);
-
-const express = require('express');
-const app = express();
-app.get('/', (req, res) => {
-  res.send('EEe MOD is running!');
-});
-app.listen(3000, () => {
-  console.log('Fake web server running on port 3000');
-});
+    if (timestamps.has(message.author.id)) {
+      const expiration = timestamps.get(message.author.id) + cooldownAmount;
+      if (now < expiration) {
+        const timeLeft = ((expiration - now) / 1000).toFixed(1);
+        return message.reply(`⏳ Please wait ${timeLeft}s before using 
