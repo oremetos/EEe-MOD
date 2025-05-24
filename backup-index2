@@ -146,9 +146,10 @@ client.on('messageCreate', async message => {
     setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
   }
 
-  // Help & Menus
-  if (command === 'help') {
-  const embed = new EmbedBuilder().setTitle("📖 EEe MOD Help Menu")
+// Help & Menus
+if (command === 'help') {
+  const embed = new EmbedBuilder()
+    .setTitle("📖 EEe MOD Help Menu")
     .setDescription("Use one of the following commands to view available features in each category:")
     .addFields(
       { name: "🛡️ Moderation", value: "`+moderation` – User control, roles, nicknames, warnings, and more." },
@@ -159,55 +160,57 @@ client.on('messageCreate', async message => {
     .setColor(0x00aaff);
   return message.channel.send({ embeds: [embed] });
 }
-  }
-  if (command === 'moderation') {
-  return message.channel.send({
-    embeds: [new EmbedBuilder().setTitle("🛡️ Moderation Commands")
-      .setDescription(
-        `+kick @user\nKick someone out of your life. Example: +kick @TomRiddle\n\n` +
-        `+ban @user\nPermanent timeout. Example: +ban @TomRiddle\n\n` +
-        `+warn @user [reason]\nGive a slap on the wrist. Example: +warn @TomRiddle being evil\n\n` +
-        `+mute @user 10m\nMake someone shut up. Example: +mute @TomRiddle 10m\n\n` +
-        `+clear 10 / +msg 10\nDelete messages. Example: +msg 10\n\n` +
-        `+role @role @user\nGive a shiny badge. Example: +role @Slytherin @SeverusSnape\n\n` +
-        `+rem @role @user\nStrip a badge. Example: +rem @DeathEater @TomRiddle\n\n` +
-        `+nickname @user newname\nRename someone. Example: +nickname @TomRiddle Voldy\n\n` +
-        `+slowmode 10s\nSet channel slowmode. Example: +slowmode 10s\n\n` +
-        `+user @user\nView user info. Example: +user @SeverusSnape\n\n` +
-        `+infrole @role\nView role info.\n\n` +
-        `+listerole\nList all server roles.\n\n` +
-        `+createrole name #hex true false\nCreate a custom role.\n\n` +
-        `+report @user reason\n(planned) Report a user to mods.`
-      )
-      .setColor(0xff9900)]
-  });
-} 
-  if (command === 'utility') {
-  return message.channel.send({
-    embeds: [new EmbedBuilder().setTitle("🧩 Utility Commands")
-      .setDescription(
-        `+poll \"Question\" \"Option1\" \"Option2\"\nCreate a live poll. Example: +poll \"Who wins?\" \"Snape\" \"Voldemort\"\n\n` +
-        `+anc #channel message\nSend an announcement embed. Example: +anc #general The Sorting Ceremony begins!\n\n` +
-        `+infrole @role\nView details about a role. Example: +infrole @Gryffindor\n\n` +
-        `+listerole\nList all server roles in one message.\n\n` 
-      )
-      .setColor(0x00bfff)]
-  });
+
+if (command === 'moderation') {
+  const embed = new EmbedBuilder()
+    .setTitle("🛡️ Moderation Commands")
+    .setDescription(
+      `+kick @user\nKick someone out of your life. Example: +kick @TomRiddle\n\n` +
+      `+ban @user\nPermanent timeout. Example: +ban @TomRiddle\n\n` +
+      `+warn @user [reason]\nGive a slap on the wrist. Example: +warn @TomRiddle being evil\n\n` +
+      `+mute @user 10m\nMake someone shut up. Example: +mute @TomRiddle 10m\n\n` +
+      `+clear 10 / +msg 10\nDelete messages. Example: +msg 10\n\n` +
+      `+role @role @user\nGive a shiny badge. Example: +role @Slytherin @SeverusSnape\n\n` +
+      `+rem @role @user\nStrip a badge. Example: +rem @DeathEater @TomRiddle\n\n` +
+      `+nickname @user newname\nRename someone. Example: +nickname @TomRiddle Voldy\n\n` +
+      `+slowmode 10s\nSet channel slowmode. Example: +slowmode 10s\n\n` +
+      `+user @user\nView user info. Example: +user @SeverusSnape\n\n` +
+      `+infrole @role\nView role info.\n\n` +
+      `+listerole\nList all server roles.\n\n` +
+      `+createrole name #hex true false\nCreate a custom role.\n\n` +
+      `+report @user reason\n(planned) Report a user to mods.`
+    )
+    .setColor(0xff9900);
+  return message.channel.send({ embeds: [embed] });
 }
-  if (command === 'fun') {
-  return message.channel.send({
-    embeds: [new EmbedBuilder().setTitle("🎉 Fun & Community Commands")
-      .setDescription(
-        `More coming soon! Planned features include:\n\n` +
-        `+gpt question\nChat with the magic book 📘 (AI answers)\n` +
-        `+meme\nPull a fresh meme from the wizard archives\n` +
-        `+8ball question\nAsk the magic orb a yes/no question\n` +
-        `+dailyspell\nReceive your daily power spell\n\n` +
-        `EEe MOD – Crafted for fun by Oremetos`
-      )
-      .setColor(0xff66cc)]
-  });
-}  
+
+if (command === 'utility') {
+  const embed = new EmbedBuilder()
+    .setTitle("🧩 Utility Commands")
+    .setDescription(
+      `+poll \"Question\" \"Option1\" \"Option2\"\nCreate a live poll. Example: +poll \"Who wins?\" \"Snape\" \"Voldemort\"\n\n` +
+      `+anc #channel message\nSend an announcement embed. Example: +anc #general The Sorting Ceremony begins!\n\n` +
+      `+infrole @role\nView details about a role. Example: +infrole @Gryffindor\n\n` +
+      `+listerole\nList all server roles in one message.`
+    )
+    .setColor(0x00bfff);
+  return message.channel.send({ embeds: [embed] });
+}
+
+if (command === 'fun') {
+  const embed = new EmbedBuilder()
+    .setTitle("🎉 Fun & Community Commands")
+    .setDescription(
+      `More coming soon! Planned features include:\n\n` +
+      `+gpt question\nChat with the magic book 📘 (AI answers)\n` +
+      `+meme\nPull a fresh meme from the wizard archives\n` +
+      `+8ball question\nAsk the magic orb a yes/no question\n` +
+      `+dailyspell\nReceive your daily power spell\n\n` +
+      `EEe MOD – Crafted for fun by Oremetos`
+    )
+    .setColor(0xff66cc);
+  return message.channel.send({ embeds: [embed] });
+}
   // Moderation Actions
   if (command === 'kick') {
     if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers)) return;
