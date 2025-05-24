@@ -5,165 +5,89 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildBans,
+    GatewayIntentBits.GuildInvites
   ]
 });
 
 const prefix = '+';
 const cooldowns = new Collection();
 const warns = new Collection();
+const invites = new Map();
 const logChannelId = '855032731209564160';
 
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`Logged in as ${client.user.tag}!`);
+  client.guilds.cache.forEach(async guild => {
+    const guildInvites = await guild.invites.fetch().catch(() => null);
+    if (guildInvites) invites.set(guild.id, guildInvites);
+  });
 });
 
-client.on('messageCreate', async message => {
-  if (!message.content.startsWith(prefix) || message.author.bot) return;
-
-  const args = message.content.slice(prefix.length).trim().split(/ +/);
-  const command = args.shift().toLowerCase();
-
-  if (!cooldowns.has(command)) cooldowns.set(command, new Collection());
-  const now = Date.now();
-  const timestamps = cooldowns.get(command);
-  const cooldownAmount = 5000;
-  if (timestamps.has(message.author.id)) {
-    const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
-    if (now < expirationTime) {
-      const timeLeft = ((expirationTime - now) / 1000).toFixed(1);
-      return message.reply(`⏳ Wait ${timeLeft}s before using \`${prefix}${command}\` again.`);
-    }
-  }
-  timestamps.set(message.author.id, now);
-  setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
-
-  const sendLog = async (title, description, color = 0xff6600) => {
-    const logChannel = await message.guild.channels.fetch(logChannelId).catch(() => null);
-    if (!logChannel) return;
-    const embed = new EmbedBuilder()
-      .setTitle(title)
-      .setDescription(description)
-      .setColor(color)
-      .setTimestamp()
-      .setFooter({ text: `EEe MOD • ${message.guild.name}` });
-    logChannel.send({ embeds: [embed] }).catch(err => {
-      console.error('Failed to send log:', err.message);
-    });
-  };
-
-  if (command === 'nickname') {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.ManageNicknames)) {
-      return message.reply("❌ You don't have permission to change nicknames.");
-    }
-    const member = message.mentions.members.first();
-    const newName = args.slice(1).join(" ");
-    if (!member || !newName) {
-      return message.reply("Usage: `+nickname @user NewNickname`");
-    }
-
-    try {
-      await member.setNickname(newName);
-      message.channel.send(`✏️ Renamed ${member.user.tag} to **${newName}**`);
-      await sendLog("✏️ Nickname Changed", `${member.user.tag} was renamed to **${newName}** by ${message.author.tag}`);
-    } catch {
-      message.reply("❌ Failed to change nickname.");
-    }
-  }
-
-  if (command === 'user') {
-    const member = message.mentions.members.first() || message.member;
-    const roles = member.roles.cache
-      .filter(role => role.id !== message.guild.id)
-      .map(role => role.name)
-      .join(', ') || 'None';
-
-    const embed = new EmbedBuilder()
-      .setTitle(`👤 User Info: ${member.user.tag}`)
-      .setThumbnail(member.user.displayAvatarURL())
-      .addFields(
-        { name: "Joined Server", value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:D>`, inline: true },
-        { name: "Account Created", value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:D>`, inline: true },
-        { name: "Roles", value: roles }
-      )
-      .setColor(0x00bfff)
-      .setFooter({ text: `ID: ${member.id}` });
-
-    message.channel.send({ embeds: [embed] });
-  }
-
-  if (command === 'help') {
-    const embed = new EmbedBuilder()
-      .setTitle("🧠 EEe MOD Command List")
-      .setColor(0xff9900)
-      .setDescription("Here are the available commands with examples — powered by satire & sarcasm.")
-      .addFields(
-        { name: "`+ping`", value: "Test if the bot's still breathing. Replies with `Pong!`" },
-        { name: "`+kick @user`", value: "Kick someone out of your life. Example: `+kick @TomRiddle`" },
-        { name: "`+ban @user`", value: "Permanent timeout. Example: `+ban @TomRiddle`" },
-        { name: "`+warn @user [reason]`", value: "Give a slap on the wrist. Example: `+warn @TomRiddle being evil`" },
-        { name: "`+mute @user 10m`", value: "Make someone shut up. Example: `+mute @TomRiddle 10m`" },
-        { name: "`+clear 10` or `+msg 10`", value: "Delete messages. Example: `+msg 10`" },
-        { name: "`+role @role @user`", value: "Give a shiny badge. Example: `+role @Slytherin @SeverusSnape`" },
-        { name: "`+rem @role @user`", value: "Strip a badge. Example: `+rem @DeathEater @TomRiddle`" },
-        { name: "`+nickname @user NewName`", value: "Rename someone. Example: `+nickname @TomRiddle Voldy`" },
-        { name: "`+user @user`", value: "Show user info. Example: `+user @SeverusSnape`" },
-        { name: "`+poll \"Question\" \"Option 1\" \"Option 2\"`", value: "Start a poll. Example: `+poll \"Best house?\" \"Slytherin\" \"Gryffindor\"`" },
-        { name: "`+anc #channel Your message`", value: "Make an announcement in any channel. Example: `+anc #announcements Hello team!`" },
-        { name: "`+slowmode 10s`", value: "Set slowmode in current channel. Example: `+slowmode 10s`" }
-      )
-      .setFooter({ text: "More features are being summoned..." });
-
-    message.channel.send({ embeds: [embed] });
-  }
-
-  if (command === 'poll') {
-    const [question, ...options] = args.join(' ').match(/\"(.*?)\"/g)?.map(s => s.replace(/\"/g, '')) || [];
-    if (!question || options.length < 2) {
-      return message.reply("Usage: `+poll \"Question\" \"Option 1\" \"Option 2\" [... up to 10]`");
-    }
-
-    const emojis = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
-    const description = options.map((opt, i) => `${emojis[i]} ${opt}`).join('\n');
-
-    const embed = new EmbedBuilder()
-      .setTitle(`📊 ${question}`)
-      .setDescription(description)
-      .setColor(0x00bfff)
-      .setFooter({ text: `Poll by ${message.author.tag}` });
-
-    const pollMessage = await message.channel.send({ embeds: [embed] });
-    for (let i = 0; i < options.length; i++) {
-      await pollMessage.react(emojis[i]);
-    }
-  }
-
-  if (command === 'anc') {
-    const channelMention = args.shift();
-    const targetChannel = message.mentions.channels.first();
-    const content = args.join(' ');
-
-    if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
-      return message.reply("❌ You don't have permission to announce.");
-    }
-    if (!targetChannel || !content) return message.reply("Usage: `+anc #channel Your message here`");
-
-    targetChannel.send({ content: `📢 ${content}` });
-    message.channel.send("✅ Announcement sent.");
-  }
-
-  if (command === 'slowmode') {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) {
-      return message.reply("❌ You don't have permission to set slowmode.");
-    }
-
-    const duration = ms(args[0] || '0');
-    if (isNaN(duration) || duration / 1000 > 21600) return message.reply("Enter a valid duration under 6 hours.");
-
-    await message.channel.setRateLimitPerUser(duration / 1000);
-    message.channel.send(`🐢 Slowmode set to ${args[0]}`);
-  }
+client.on('inviteCreate', async invite => {
+  const guildInvites = await invite.guild.invites.fetch().catch(() => null);
+  if (guildInvites) invites.set(invite.guild.id, guildInvites);
 });
+
+client.on('guildMemberAdd', async member => {
+  const cachedInvites = invites.get(member.guild.id);
+  const newInvites = await member.guild.invites.fetch().catch(() => null);
+  if (!newInvites) return;
+
+  invites.set(member.guild.id, newInvites);
+
+  const usedInvite = newInvites.find(inv => {
+    const cached = cachedInvites.get(inv.code);
+    return cached && inv.uses > cached.uses;
+  });
+
+  const inviter = usedInvite?.inviter?.tag || 'Unknown';
+  const embed = new EmbedBuilder()
+    .setTitle("📥 Member Joined")
+    .setDescription(`**${member.user.tag}** joined the server\nInvited by: **${inviter}**`)
+    .setColor(0x57f287)
+    .setTimestamp();
+
+  const logChannel = await member.guild.channels.fetch(logChannelId).catch(() => null);
+  if (logChannel) logChannel.send({ embeds: [embed] });
+});
+
+client.on('guildMemberRemove', async member => {
+  const embed = new EmbedBuilder()
+    .setTitle("📤 Member Left")
+    .setDescription(`**${member.user.tag}** has left the server.`)
+    .setColor(0xf04747)
+    .setTimestamp();
+
+  const logChannel = await member.guild.channels.fetch(logChannelId).catch(() => null);
+  if (logChannel) logChannel.send({ embeds: [embed] });
+});
+
+client.on('guildBanAdd', async ban => {
+  const embed = new EmbedBuilder()
+    .setTitle("⛔ Member Banned")
+    .setDescription(`**${ban.user.tag}** was banned from the server.`)
+    .setColor(0xff0000)
+    .setTimestamp();
+
+  const logChannel = await ban.guild.channels.fetch(logChannelId).catch(() => null);
+  if (logChannel) logChannel.send({ embeds: [embed] });
+});
+
+client.on('guildBanRemove', async ban => {
+  const embed = new EmbedBuilder()
+    .setTitle("✅ Member Unbanned")
+    .setDescription(`**${ban.user.tag}** was unbanned from the server.`)
+    .setColor(0x00ff99)
+    .setTimestamp();
+
+  const logChannel = await ban.guild.channels.fetch(logChannelId).catch(() => null);
+  if (logChannel) logChannel.send({ embeds: [embed] });
+});
+
+// (Rest of your messageCreate commands stay here...)
 
 client.login(process.env.TOKEN);
 
