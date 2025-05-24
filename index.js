@@ -50,141 +50,64 @@ client.on('messageCreate', async message => {
     logChannel.send({ embeds: [embed] }).catch(err => {
       console.error('Failed to send log:', err.message);
     });
-  };
-    if (command === 'ping') {
-    message.channel.send('Pong!');
-  }
-
-  if (command === 'kick') {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers)) {
-      return message.reply("❌ You don't have permission to kick members.");
+  };  if (command === 'nickname') {
+    if (!message.member.permissions.has(PermissionsBitField.Flags.ManageNicknames)) {
+      return message.reply("❌ You don't have permission to change nicknames.");
+    }
+    const member = message.mentions.members.first();
+    const newName = args.slice(1).join(" ");
+    if (!member || !newName) {
+      return message.reply("Usage: `+nickname @user NewNickname`");
     }
 
-    const member = message.mentions.members.first();
-    if (!member) return message.reply("❗ Mention someone to kick: `+kick @user`");
-
-    if (!member.kickable) return message.reply("❌ I can't kick this user. Check my role position and permissions.");
-
     try {
-      await member.kick();
-      message.channel.send(`✅ ${member.user.tag} was kicked.`);
-      await sendLog("🦵 Member Kicked", `${member.user.tag} was kicked by ${message.author.tag}`);
+      await member.setNickname(newName);
+      message.channel.send(`✏️ Renamed ${member.user.tag} to **${newName}**`);
+      await sendLog("✏️ Nickname Changed", `${member.user.tag} was renamed to **${newName}** by ${message.author.tag}`);
     } catch {
-      message.channel.send('❌ Failed to kick the user.');
+      message.reply("❌ Failed to change nickname.");
     }
   }
 
-  if (command === 'ban') {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers)) {
-      return message.reply("❌ You don't have permission to ban members.");
-    }
+  if (command === 'user') {
+    const member = message.mentions.members.first() || message.member;
+    const roles = member.roles.cache
+      .filter(role => role.id !== message.guild.id)
+      .map(role => role.name)
+      .join(', ') || 'None';
 
-    const member = message.mentions.members.first();
-    if (!member) return message.reply("❗ Mention someone to ban: `+ban @user`");
+    const embed = new EmbedBuilder()
+      .setTitle(`👤 User Info: ${member.user.tag}`)
+      .setThumbnail(member.user.displayAvatarURL())
+      .addFields(
+        { name: "Joined Server", value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:D>`, inline: true },
+        { name: "Account Created", value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:D>`, inline: true },
+        { name: "Roles", value: roles }
+      )
+      .setColor(0x00bfff)
+      .setFooter({ text: `ID: ${member.id}` });
 
-    if (!member.bannable) return message.reply("❌ I can't ban this user. Check my role position and permissions.");
-
-    try {
-      await member.ban();
-      message.channel.send(`✅ ${member.user.tag} was banned.`);
-      await sendLog("⛔ Member Banned", `${member.user.tag} was banned by ${message.author.tag}`);
-    } catch {
-      message.channel.send('❌ Failed to ban the user.');
-    }
+    message.channel.send({ embeds: [embed] });
   }
 
-  if (command === 'warn') {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers)) return message.reply("❌ No permission.");
-    const member = message.mentions.members.first();
-    const reason = args.slice(1).join(' ') || "No reason provided";
-    if (!member) return message.reply("Mention a user to warn: `+warn @user reason`");
+  if (command === 'help') {
+    const embed = new EmbedBuilder()
+      .setTitle("🧠 EEe MOD Command List")
+      .setColor(0xff9900)
+      .setDescription("Here are the available commands with examples — powered by satire & sarcasm.")
+      .addFields(
+        { name: "`+ping`", value: "Test if the bot's still breathing. Replies with `Pong!`" },
+        { name: "`+kick @user`", value: "Kick someone out of your life. Example: `+kick @TomRiddle`" },
+        { name: "`+ban @user`", value: "Permanent timeout. Example: `+ban @TomRiddle`" },
+        { name: "`+warn @user [reason]`", value: "Give a slap on the wrist. Example: `+warn @TomRiddle being evil`" },
+        { name: "`+mute @user 10m`", value: "Make someone shut up. Example: `+mute @TomRiddle 10m`" },
+        { name: "`+clear 10` or `+msg 10`", value: "Delete messages. Example: `+msg 10`" },
+        { name: "`+role @role @user`", value: "Give a shiny badge. Example: `+role @Slytherin @SeverusSnape`" },
+        { name: "`+rem @role @user`", value: "Strip a badge. Example: `+rem @DeathEater @TomRiddle`" },
+        { name: "`+nickname @user NewName`", value: "Rename someone. Example: `+nickname @TomRiddle Voldy`" },
+        { name: "`+user @user`", value: "Show user info. Example: `+user @SeverusSnape`" }
+      )
+      .setFooter({ text: "More features are being summoned..." });
 
-    const currentWarns = warns.get(member.id) || 0;
-    warns.set(member.id, currentWarns + 1);
-
-    try {
-      await member.send(`⚠️ You were warned in **${message.guild.name}** for: ${reason}`);
-    } catch {}
-    message.channel.send(`✅ ${member.user.tag} has been warned.`);
-    await sendLog("⚠️ Member Warned", `${member.user.tag} was warned by ${message.author.tag}\nReason: ${reason}\nTotal Warns: ${warns.get(member.id)}`);
+    message.channel.send({ embeds: [embed] });
   }
-
-  if (command === 'mute') {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.MuteMembers)) return message.reply("❌ No permission.");
-    const member = message.mentions.members.first();
-    const duration = args[1];
-    if (!member || !duration) return message.reply("Usage: `+mute @user 10m`");
-
-    const mutedRole = message.guild.roles.cache.find(r => r.name.toLowerCase() === "muted");
-    if (!mutedRole) return message.reply("❗ No role named `Muted` found.");
-
-    await member.roles.add(mutedRole).catch(() => {
-      return message.reply("❌ Failed to assign the muted role.");
-    });
-
-    message.channel.send(`🔇 ${member.user.tag} muted for ${duration}`);
-    await sendLog("🔇 Member Muted", `${member.user.tag} was muted by ${message.author.tag} for **${duration}**`);
-
-    setTimeout(async () => {
-      if (member.roles.cache.has(mutedRole.id)) {
-        await member.roles.remove(mutedRole).catch(() => {});
-        await sendLog("🔊 Member Unmuted", `${member.user.tag} was automatically unmuted after ${duration}`);
-      }
-    }, ms(duration));
-  }
-
-  if (command === 'clear' || command === 'msg') {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) return message.reply("❌ No permission.");
-    const amount = parseInt(args[0]);
-    if (isNaN(amount) || amount < 1 || amount > 100) return message.reply("Enter a number between 1 and 100.");
-
-    try {
-      await message.channel.bulkDelete(amount, true);
-      message.channel.send(`🧹 Deleted ${amount} messages.`).then(m => setTimeout(() => m.delete(), 3000));
-      await sendLog("🧹 Messages Cleared", `${amount} messages deleted by ${message.author.tag} in ${message.channel}`);
-    } catch {
-      message.reply("❌ Could not delete messages.");
-    }
-  }
-
-  if (command === 'role') {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.ManageRoles)) return message.reply("You don't have permission to manage roles.");
-    const role = message.mentions.roles.first();
-    const member = message.mentions.members.first();
-    if (!role || !member) return message.reply("Usage: `+role @role @user`");
-
-    try {
-      await member.roles.add(role);
-      message.channel.send(`✅ Added role ${role.name} to ${member.user.tag}`);
-      await sendLog("🔧 Role Added", `${message.author.tag} added role ${role.name} to ${member.user.tag}`);
-    } catch {
-      message.channel.send("❌ Failed to add role.");
-    }
-  }
-
-  if (command === 'rem') {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.ManageRoles)) return message.reply("You don't have permission to manage roles.");
-    const role = message.mentions.roles.first();
-    const member = message.mentions.members.first();
-    if (!role || !member) return message.reply("Usage: `+rem @role @user`");
-
-    try {
-      await member.roles.remove(role);
-      message.channel.send(`✅ Removed role ${role.name} from ${member.user.tag}`);
-      await sendLog("🧹 Role Removed", `${message.author.tag} removed role ${role.name} from ${member.user.tag}`);
-    } catch {
-      message.channel.send("❌ Failed to remove role.");
-    }
-  }
-});
-client.login(process.env.TOKEN);
-
-// --- Express server for Render keep-alive ---
-const express = require('express');
-const app = express();
-app.get('/', (req, res) => {
-  res.send('EEe MOD is running!');
-});
-app.listen(3000, () => {
-  console.log('Fake web server running on port 3000');
-});
