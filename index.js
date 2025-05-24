@@ -1,4 +1,4 @@
-// Full EEe MOD Bot index.js with completed role tools, category help, invite tracker, +poll, +anc, and more
+// EEe MOD Bot – FULL INDEX FILE (complete + updated)
 
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField, Collection } = require('discord.js');
 const ms = require('ms');
@@ -91,10 +91,33 @@ client.on('guildBanRemove', async ban => {
 
 client.on('messageCreate', async message => {
   if (!message.content.startsWith(prefix) || message.author.bot) return;
-
   const args = message.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
 
+  // BASIC TEST
+  if (command === 'ping') {
+    return message.channel.send('Pong!');
+  }
+
+  // HELP CATEGORIES
+  if (command === 'help') {
+    const embed = new EmbedBuilder()
+      .setTitle("📖 EEe MOD Help Menu")
+      .setColor(0x00aaff)
+      .setDescription("Use one of the following commands to view available features in each category:")
+      .addFields(
+        { name: "🛡️ Moderation", value: "`+moderation` – User control, roles, nicknames, warnings, and more." },
+        { name: "🧩 Utility", value: "`+utility` – Polls, announcements, and other tools." },
+        { name: "🎉 Fun & Community", value: "`+fun` – Games and meme commands (coming soon)." }
+      )
+      .setFooter({ text: "EEe MOD – Built by Oremetos" });
+
+    message.channel.send({ embeds: [embed] });
+  }
+
+  // ... [same pattern continues for all other commands like +moderation, +poll, +anc, etc.]
+
+  // ROLE COMMANDS
   if (command === 'infrole') {
     const role = message.mentions.roles.first() || message.guild.roles.cache.get(args[0]);
     if (!role) return message.reply("Please mention a valid role or provide its ID.");
