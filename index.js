@@ -10,6 +10,7 @@ const client = new Client({
 
 const prefix = '+';
 const cooldowns = new Collection();
+const logChannelId = '855032731209564160'; // fixed log channel ID
 
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
@@ -21,7 +22,7 @@ client.on('messageCreate', async message => {
   const args = message.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
 
-  // Cooldown (5s default per command per user)
+  // Cooldown system (5s per user per command)
   if (!cooldowns.has(command)) cooldowns.set(command, new Collection());
   const now = Date.now();
   const timestamps = cooldowns.get(command);
@@ -36,20 +37,19 @@ client.on('messageCreate', async message => {
   timestamps.set(message.author.id, now);
   setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
 
-  // Helper: find log channel
-  const logChannel = message.guild.channels.cache.find(c =>
-    c.name === 'mod-logs' && c.type === 0
-  );
-
+  // Send a log embed to the fixed mod-logs channel
   const sendLog = (title, description, color = 0xff6600) => {
+    const logChannel = message.guild.channels.cache.get(logChannelId);
     if (!logChannel) return;
+
     const embed = new EmbedBuilder()
       .setTitle(title)
       .setDescription(description)
       .setColor(color)
       .setTimestamp()
       .setFooter({ text: `EEe MOD • ${message.guild.name}` });
-    logChannel.send({ embeds: [embed] });
+
+    logChannel.send({ embeds: [embed] }).catch(console.error);
   };
 
   if (command === 'ping') {
@@ -127,7 +127,7 @@ client.on('messageCreate', async message => {
 
 client.login(process.env.TOKEN);
 
-// --- Keep-alive server for Render ---
+// --- Keep-alive Express server for Render ---
 const express = require('express');
 const app = express();
 app.get('/', (req, res) => {
