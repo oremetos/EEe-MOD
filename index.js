@@ -1,6 +1,11 @@
 const { Client, GatewayIntentBits } = require('discord.js');
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers
+  ]
 });
 
 const prefix = '+';
@@ -40,6 +45,38 @@ client.on('messageCreate', async message => {
       message.channel.send(`${member.user.tag} was banned.`);
     } catch (error) {
       message.channel.send('Failed to ban the user.');
+    }
+  }
+
+  if (command === 'role') {
+    if (!message.member.permissions.has('ManageRoles')) return message.reply("You don't have permission to manage roles.");
+    
+    const role = message.mentions.roles.first();
+    const member = message.mentions.members.first();
+    
+    if (!role || !member) return message.reply("Please mention a role and a user: `+role @role @user`");
+
+    try {
+      await member.roles.add(role);
+      message.channel.send(`✅ Added role ${role.name} to ${member.user.tag}`);
+    } catch (err) {
+      message.channel.send("❌ Failed to add role. Check my permissions and role hierarchy.");
+    }
+  }
+
+  if (command === 'rem') {
+    if (!message.member.permissions.has('ManageRoles')) return message.reply("You don't have permission to manage roles.");
+    
+    const role = message.mentions.roles.first();
+    const member = message.mentions.members.first();
+    
+    if (!role || !member) return message.reply("Please mention a role and a user: `+rem @role @user`");
+
+    try {
+      await member.roles.remove(role);
+      message.channel.send(`✅ Removed role ${role.name} from ${member.user.tag}`);
+    } catch (err) {
+      message.channel.send("❌ Failed to remove role. Check my permissions and role hierarchy.");
     }
   }
 });
