@@ -1,4 +1,4 @@
-// EEe MOD Bot – FULL INDEX FILE (complete + updated)
+// EEe MOD FULL INDEX with ALL features (ping, help, moderation, utility, roles, invites, poll, anc, etc.)
 
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField, Collection } = require('discord.js');
 const ms = require('ms');
@@ -94,12 +94,10 @@ client.on('messageCreate', async message => {
   const args = message.content.slice(prefix.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
 
-  // BASIC TEST
   if (command === 'ping') {
     return message.channel.send('Pong!');
   }
 
-  // HELP CATEGORIES
   if (command === 'help') {
     const embed = new EmbedBuilder()
       .setTitle("📖 EEe MOD Help Menu")
@@ -115,9 +113,101 @@ client.on('messageCreate', async message => {
     message.channel.send({ embeds: [embed] });
   }
 
-  // ... [same pattern continues for all other commands like +moderation, +poll, +anc, etc.]
+  if (command === 'moderation') {
+    const embed = new EmbedBuilder()
+      .setTitle("🛡️ Moderation Commands")
+      .setColor(0xff9900)
+      .addFields(
+        { name: "`+kick @user`", value: "Kick someone out of your life. Example: `+kick @TomRiddle`" },
+        { name: "`+ban @user`", value: "Permanent timeout. Example: `+ban @TomRiddle`" },
+        { name: "`+warn @user [reason]`", value: "Give a slap on the wrist. Example: `+warn @TomRiddle being evil`" },
+        { name: "`+mute @user 10m`", value: "Make someone shut up. Example: `+mute @TomRiddle 10m`" },
+        { name: "`+clear 10` / `+msg 10`", value: "Delete messages. Example: `+msg 10`" },
+        { name: "`+role @role @user`", value: "Give a shiny badge. Example: `+role @Slytherin @SeverusSnape`" },
+        { name: "`+rem @role @user`", value: "Strip a badge. Example: `+rem @DeathEater @TomRiddle`" },
+        { name: "`+nickname @user newname`", value: "Rename someone. Example: `+nickname @TomRiddle Voldy`" },
+        { name: "`+slowmode 10s`", value: "Set channel slowmode. Example: `+slowmode 10s`" },
+        { name: "`+user @user`", value: "View user info. Example: `+user @SeverusSnape`" },
+        { name: "`+infrole @role`", value: "View role info." },
+        { name: "`+listerole`", value: "List all server roles." },
+        { name: "`+createrole name #hex true false`", value: "Create a custom role." },
+        { name: "`+report @user reason`", value: "(planned) Report a user to mods." }
+      )
+      .setFooter({ text: "EEe MOD – Moderation Category" });
 
-  // ROLE COMMANDS
+    message.channel.send({ embeds: [embed] });
+  }
+
+  if (command === 'utility') {
+    const embed = new EmbedBuilder()
+      .setTitle("🧩 Utility Commands")
+      .setColor(0x00bfff)
+      .addFields(
+        { name: "`+poll \"Question\" \"Option 1\" \"Option 2\"`", value: "Start a poll. Example: `+poll \"Best house?\" \"Slytherin\" \"Gryffindor\"`" },
+        { name: "`+anc #channel|<#channel>|channelID Your message`", value: "Send an announcement." }
+      )
+      .setFooter({ text: "EEe MOD – Utility Category" });
+
+    message.channel.send({ embeds: [embed] });
+  }
+
+  if (command === 'fun') {
+    const embed = new EmbedBuilder()
+      .setTitle("🎉 Fun & Community Commands")
+      .setColor(0xff66cc)
+      .setDescription("Coming soon: Games, jokes, custom meme commands and more!")
+      .setFooter({ text: "EEe MOD – Fun Category" });
+
+    message.channel.send({ embeds: [embed] });
+  }
+
+  if (command === 'poll') {
+    const [question, ...options] = args.join(' ').match(/\"(.*?)\"/g)?.map(s => s.replace(/\"/g, '')) || [];
+    if (!question || options.length < 2) {
+      return message.reply("Usage: `+poll \"Question\" \"Option 1\" \"Option 2\" [... up to 10]`");
+    }
+
+    const emojis = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+    const description = options.map((opt, i) => `${emojis[i]} ${opt}`).join('\n');
+
+    const embed = new EmbedBuilder()
+      .setTitle(`📊 ${question}`)
+      .setDescription(description)
+      .setColor(0x00bfff)
+      .setFooter({ text: `Poll by ${message.author.tag}` });
+
+    const pollMessage = await message.channel.send({ embeds: [embed] });
+    for (let i = 0; i < options.length; i++) {
+      await pollMessage.react(emojis[i]);
+    }
+  }
+
+  if (command === 'anc') {
+    if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+      return message.reply("❌ You don't have permission to announce.");
+    }
+
+    const target = args.shift();
+    const content = args.join(' ');
+    let targetChannel = null;
+
+    if (message.mentions.channels.size > 0) {
+      targetChannel = message.mentions.channels.first();
+    } else if (/^<#(\d+)>$/.test(target)) {
+      const id = target.match(/^<#(\d+)>$/)[1];
+      targetChannel = message.guild.channels.cache.get(id);
+    } else if (/^(\d{17,20})$/.test(target)) {
+      targetChannel = message.guild.channels.cache.get(target);
+    }
+
+    if (!targetChannel || !content) {
+      return message.reply("Usage: `+anc #channel|channelID|<#channel> Your message here`");
+    }
+
+    targetChannel.send({ content: `📢 ${content}` });
+    message.channel.send("✅ Announcement sent.");
+  }
+
   if (command === 'infrole') {
     const role = message.mentions.roles.first() || message.guild.roles.cache.get(args[0]);
     if (!role) return message.reply("Please mention a valid role or provide its ID.");
