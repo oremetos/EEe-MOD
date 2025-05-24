@@ -1,6 +1,61 @@
 // EEe MOD – MASTER VERSION (COMPLETE)
 // Includes: Help system, Moderation, Role Tools, Utility, Cooldowns, Logging, Invite Tracker, Express Server
+/*
+============================
+📌 EEe MOD – DEVELOPMENT NOTES & CHECKLIST
+============================
 
+🧠 IMPORTANT PROTOCOL – READ BEFORE EDITING:
+1. Always send back the **entire `index.js`** file after ANY update.
+2. Never send partial code or isolated functions.
+3. Always ask for the latest `index.js` before working.
+4. Analyze the entire file for errors, bugs, or missing logic.
+5. After adding any feature, **add it to the checklist below**.
+6. All feature groups must be reviewed and verified with each update.
+
+----------------------------
+✅ CURRENT CHECKLIST
+----------------------------
+
+CORE SYSTEM:
+- [x] Uses `+` as prefix
+- [x] Cooldown system per user and command
+- [x] `.env` support for TOKEN and LOG_CHANNEL_ID
+- [x] Web server to stay alive on Render
+- [x] Invite tracking (join, leave, ban)
+- [x] Logs all mod actions and events to mod-log channel
+- [x] Unknown command handler
+
+HELP MENU & CATEGORIES:
+- [x] `+help` shows 3 categories
+- [x] `+moderation` — full list of mod tools
+- [x] `+utility` — tools and server features
+- [x] `+fun` — placeholder for future community/fun features
+
+MODERATION:
+- [x] `+kick @user` — kicks user
+- [x] `+ban @user` — bans user
+- [x] `+warn @user reason` — stores warning in memory
+- [x] `+mute @user 10m` — adds muted role, auto-unmutes
+- [x] `+clear 10` — deletes messages (1–100)
+- [x] `+msg 10` — same as clear
+- [x] `+slowmode 10s` — sets rate limit in channel
+- [x] `+report @user reason` — sends embed to mod-log
+- [x] `+role @role @user` — assigns role to user
+- [x] `+rem @role @user` — removes role from user
+- [x] `+nickname @user newNick` — changes nickname
+- [x] `+createrole name #hex true false` — creates role
+- [x] `+infrole @role` — shows info about a role
+- [x] `+listerole` — lists all server roles
+- [x] `+user @user` — shows user info (tag, ID, join/creation date)
+
+UTILITY:
+- [x] `+poll "Question" "Option1" "Option2"` — dynamic poll with emoji reactions
+- [x] `+anc #channel Your message` — send embed to any channel
+  - [x] Accepts channel mention, ID, or raw link
+
+REMEMBER: Always append new features to this checklist block and revalidate the entire file before sending.
+*/
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField, Collection } = require('discord.js');
 const ms = require('ms');
 require('dotenv').config();
