@@ -37,10 +37,13 @@ client.on('messageCreate', async message => {
   timestamps.set(message.author.id, now);
   setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
 
-  // Send a log embed to the fixed mod-logs channel
-  const sendLog = (title, description, color = 0xff6600) => {
-    const logChannel = message.guild.channels.cache.get(logChannelId);
-    if (!logChannel) return;
+  // Logging function with live fetch
+  const sendLog = async (title, description, color = 0xff6600) => {
+    const logChannel = await message.guild.channels.fetch(logChannelId).catch(() => null);
+    if (!logChannel) {
+      console.warn('Log channel not found or accessible.');
+      return;
+    }
 
     const embed = new EmbedBuilder()
       .setTitle(title)
@@ -49,7 +52,9 @@ client.on('messageCreate', async message => {
       .setTimestamp()
       .setFooter({ text: `EEe MOD • ${message.guild.name}` });
 
-    logChannel.send({ embeds: [embed] }).catch(console.error);
+    logChannel.send({ embeds: [embed] }).catch(err => {
+      console.error('Failed to send log:', err.message);
+    });
   };
 
   if (command === 'ping') {
@@ -69,7 +74,7 @@ client.on('messageCreate', async message => {
     try {
       await member.kick();
       message.channel.send(`✅ ${member.user.tag} was kicked.`);
-      sendLog("🦵 Member Kicked", `${member.user.tag} was kicked by ${message.author.tag}`);
+      await sendLog("🦵 Member Kicked", `${member.user.tag} was kicked by ${message.author.tag}`);
     } catch (error) {
       message.channel.send('❌ Failed to kick the user.');
     }
@@ -88,7 +93,7 @@ client.on('messageCreate', async message => {
     try {
       await member.ban();
       message.channel.send(`✅ ${member.user.tag} was banned.`);
-      sendLog("⛔ Member Banned", `${member.user.tag} was banned by ${message.author.tag}`);
+      await sendLog("⛔ Member Banned", `${member.user.tag} was banned by ${message.author.tag}`);
     } catch (error) {
       message.channel.send('❌ Failed to ban the user.');
     }
@@ -103,7 +108,7 @@ client.on('messageCreate', async message => {
     try {
       await member.roles.add(role);
       message.channel.send(`✅ Added role ${role.name} to ${member.user.tag}`);
-      sendLog("🔧 Role Added", `${message.author.tag} added role ${role.name} to ${member.user.tag}`);
+      await sendLog("🔧 Role Added", `${message.author.tag} added role ${role.name} to ${member.user.tag}`);
     } catch {
       message.channel.send("❌ Failed to add role. Check my permissions and role hierarchy.");
     }
@@ -118,7 +123,7 @@ client.on('messageCreate', async message => {
     try {
       await member.roles.remove(role);
       message.channel.send(`✅ Removed role ${role.name} from ${member.user.tag}`);
-      sendLog("🧹 Role Removed", `${message.author.tag} removed role ${role.name} from ${member.user.tag}`);
+      await sendLog("🧹 Role Removed", `${message.author.tag} removed role ${role.name} from ${member.user.tag}`);
     } catch {
       message.channel.send("❌ Failed to remove role. Check my permissions and role hierarchy.");
     }
