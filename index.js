@@ -1,3 +1,5 @@
+// Full EEe MOD Bot index.js with category help, invite tracker, +poll, +anc and more
+
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField, Collection } = require('discord.js');
 const ms = require('ms');
 const client = new Client({
@@ -139,7 +141,7 @@ client.on('messageCreate', async message => {
       .setColor(0x00bfff)
       .addFields(
         { name: "`+poll \"Question\" \"Option 1\" \"Option 2\"`", value: "Start a poll. Example: `+poll \"Best house?\" \"Slytherin\" \"Gryffindor\"`" },
-        { name: "`+anc #channel Your message`", value: "Make an announcement. Example: `+anc #news Hello there!`" }
+        { name: "`+anc #channel|<#channel>|channelID Your message`", value: "Send an announcement." }
       )
       .setFooter({ text: "EEe MOD – Utility Category" });
 
@@ -154,6 +156,53 @@ client.on('messageCreate', async message => {
       .setFooter({ text: "EEe MOD – Fun Category" });
 
     message.channel.send({ embeds: [embed] });
+  }
+
+  if (command === 'poll') {
+    const [question, ...options] = args.join(' ').match(/\"(.*?)\"/g)?.map(s => s.replace(/\"/g, '')) || [];
+    if (!question || options.length < 2) {
+      return message.reply("Usage: `+poll \"Question\" \"Option 1\" \"Option 2\" [... up to 10]`");
+    }
+
+    const emojis = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+    const description = options.map((opt, i) => `${emojis[i]} ${opt}`).join('\n');
+
+    const embed = new EmbedBuilder()
+      .setTitle(`📊 ${question}`)
+      .setDescription(description)
+      .setColor(0x00bfff)
+      .setFooter({ text: `Poll by ${message.author.tag}` });
+
+    const pollMessage = await message.channel.send({ embeds: [embed] });
+    for (let i = 0; i < options.length; i++) {
+      await pollMessage.react(emojis[i]);
+    }
+  }
+
+  if (command === 'anc') {
+    if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+      return message.reply("❌ You don't have permission to announce.");
+    }
+
+    const target = args.shift();
+    const content = args.join(' ');
+    let targetChannel = null;
+
+    if (message.mentions.channels.size > 0) {
+      targetChannel = message.mentions.channels.first();
+    } else if (/^<#(\d+)>$/.test(target)) {
+      const id = target.match(/^<#(\d+)>$/)[1];
+      targetChannel = message.guild.channels.cache.get(id);
+    } else if (/^(\d{17,20})$/.test(target)) {
+      targetChannel = message.guild.channels.cache.get(target);
+    }
+
+    if (!targetChannel || !content) {
+      return message.reply("Usage: `+anc #channel|channelID|<#channel> Your message here`");
+    }
+
+    targetChannel.send({ content: `📢 ${content}` });
+    message.channel.send("✅ Announcement sent.");
   }
 });
 
