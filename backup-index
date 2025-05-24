@@ -249,4 +249,18 @@ client.on('messageCreate', async message => {
     'role','rem','nickname','createrole','infrole','listerole','user','poll','anc'
   ];
   if (!allCommands.includes(command)) {
-    return message.reply(`❌ Unknown command: 
+    return message.reply(`❌ Unknown command: \`${prefix}${command}\`.`);
+  }
+}); // closes client.on('messageCreate')
+
+client.login(process.env.TOKEN);
+
+// Express server to keep bot alive on Render
+const express = require('express');
+const app = express();
+app.get('/', (req, res) => {
+  res.send('EEe MOD is running!');
+});
+app.listen(3000, () => {
+  console.log('Web server running on port 3000');
+}); 
