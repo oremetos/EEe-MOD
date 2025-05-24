@@ -50,7 +50,9 @@ client.on('messageCreate', async message => {
     logChannel.send({ embeds: [embed] }).catch(err => {
       console.error('Failed to send log:', err.message);
     });
-  };  if (command === 'nickname') {
+  };
+
+  if (command === 'nickname') {
     if (!message.member.permissions.has(PermissionsBitField.Flags.ManageNicknames)) {
       return message.reply("❌ You don't have permission to change nicknames.");
     }
@@ -111,3 +113,15 @@ client.on('messageCreate', async message => {
 
     message.channel.send({ embeds: [embed] });
   }
+});
+
+client.login(process.env.TOKEN);
+
+const express = require('express');
+const app = express();
+app.get('/', (req, res) => {
+  res.send('EEe MOD is running!');
+});
+app.listen(3000, () => {
+  console.log('Fake web server running on port 3000');
+});
