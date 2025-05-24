@@ -107,11 +107,61 @@ client.on('messageCreate', async message => {
         { name: "`+role @role @user`", value: "Give a shiny badge. Example: `+role @Slytherin @SeverusSnape`" },
         { name: "`+rem @role @user`", value: "Strip a badge. Example: `+rem @DeathEater @TomRiddle`" },
         { name: "`+nickname @user NewName`", value: "Rename someone. Example: `+nickname @TomRiddle Voldy`" },
-        { name: "`+user @user`", value: "Show user info. Example: `+user @SeverusSnape`" }
+        { name: "`+user @user`", value: "Show user info. Example: `+user @SeverusSnape`" },
+        { name: "`+poll \"Question\" \"Option 1\" \"Option 2\"`", value: "Start a poll. Example: `+poll \"Best house?\" \"Slytherin\" \"Gryffindor\"`" },
+        { name: "`+anc #channel Your message`", value: "Make an announcement in any channel. Example: `+anc #announcements Hello team!`" },
+        { name: "`+slowmode 10s`", value: "Set slowmode in current channel. Example: `+slowmode 10s`" }
       )
       .setFooter({ text: "More features are being summoned..." });
 
     message.channel.send({ embeds: [embed] });
+  }
+
+  if (command === 'poll') {
+    const [question, ...options] = args.join(' ').match(/\"(.*?)\"/g)?.map(s => s.replace(/\"/g, '')) || [];
+    if (!question || options.length < 2) {
+      return message.reply("Usage: `+poll \"Question\" \"Option 1\" \"Option 2\" [... up to 10]`");
+    }
+
+    const emojis = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
+    const description = options.map((opt, i) => `${emojis[i]} ${opt}`).join('\n');
+
+    const embed = new EmbedBuilder()
+      .setTitle(`📊 ${question}`)
+      .setDescription(description)
+      .setColor(0x00bfff)
+      .setFooter({ text: `Poll by ${message.author.tag}` });
+
+    const pollMessage = await message.channel.send({ embeds: [embed] });
+    for (let i = 0; i < options.length; i++) {
+      await pollMessage.react(emojis[i]);
+    }
+  }
+
+  if (command === 'anc') {
+    const channelMention = args.shift();
+    const targetChannel = message.mentions.channels.first();
+    const content = args.join(' ');
+
+    if (!message.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+      return message.reply("❌ You don't have permission to announce.");
+    }
+    if (!targetChannel || !content) return message.reply("Usage: `+anc #channel Your message here`");
+
+    targetChannel.send({ content: `📢 ${content}` });
+    message.channel.send("✅ Announcement sent.");
+  }
+
+  if (command === 'slowmode') {
+    if (!message.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) {
+      return message.reply("❌ You don't have permission to set slowmode.");
+    }
+
+    const duration = ms(args[0] || '0');
+    if (isNaN(duration) || duration / 1000 > 21600) return message.reply("Enter a valid duration under 6 hours.");
+
+    await message.channel.setRateLimitPerUser(duration / 1000);
+    message.channel.send(`🐢 Slowmode set to ${args[0]}`);
   }
 });
 
